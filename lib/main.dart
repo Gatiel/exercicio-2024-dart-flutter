@@ -8,14 +8,13 @@ void main() {
 class ChuvaDart extends StatelessWidget {
   const ChuvaDart({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Color(0xFF456189), // Cor RGB(69, 97, 137)
+          seedColor: const Color(0xFF456189), // Cor RGB(69, 97, 137)
         ),
         useMaterial3: true,
       ),
@@ -30,6 +29,7 @@ class Calendar extends StatefulWidget {
   @override
   State<Calendar> createState() => _CalendarState();
 }
+
 class _CalendarState extends State<Calendar> {
   DateTime _currentDate = DateTime(2023, 11, 26);
   bool _clicked = false;
@@ -45,27 +45,41 @@ class _CalendarState extends State<Calendar> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Chuva ❤️ Flutter',
-                style: TextStyle(
-                  fontSize: 18.0,
-                  color: Colors.white,
-                ),
-              ),
-              const Text(
-                'Programação',
-                style: TextStyle(
-                  fontSize: 14.0,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_sharp, color: Colors.white),
+          onPressed: () {
+            // Navigator.of(context).pop();  // Por enquanto não faz nada
+          },
         ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Text(
+                  'Chuva ❤️ Flutter',
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'Programação',
+                  style: TextStyle(
+                    fontSize: 14.0,
+                    color: Colors.white,
+                  ),
+                ),
+                Center(
+                  child: IconTextRectangle(),
+                ),
+              ],
+            ),
+          ],
+        ),
+        centerTitle: true,
+        toolbarHeight: 120, //define altura do appBar
       ),
       body: Center(
         child: Column(
@@ -74,20 +88,20 @@ class _CalendarState extends State<Calendar> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Column(
-                  children: const [
+                const Column(
+                  children: [
                     Text('Nov', style: TextStyle(fontSize: 8.0)),
                     Text('2023', style: TextStyle(fontSize: 10.0)),
                   ],
                 ),
-                SizedBox(width: 5),
-                // Espaçamento entre Nov 2023 e os dias
+                const SizedBox(width: 5),
                 Expanded(
                   child: Container(
                     color: Colors.lightBlueAccent, // Cor do fundo da linha
                     child: Row(
                       children: List.generate(5, (index) {
                         int day = 26 + index;
+                        bool isSelected = _currentDate.day == day;
                         return Padding(
                           padding: const EdgeInsets.only(left: 4.0),
                           child: MouseRegion(
@@ -99,11 +113,16 @@ class _CalendarState extends State<Calendar> {
                               child: Container(
                                 width: 30, // Largura do quadrado
                                 height: 30, // Altura do quadrado
-                                color: Colors.lightBlueAccent, // Cor do fundo da linha
+                                decoration: BoxDecoration(
+                                  color: Colors.lightBlueAccent,
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
                                 child: Center(
                                   child: Text(
                                     '$day',
-                                    style: TextStyle(color: Colors.white), // Cor do número do dia
+                                    style: TextStyle(
+                                      color: isSelected ? Colors.white: Color(0x8AFFFFFF),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -116,11 +135,6 @@ class _CalendarState extends State<Calendar> {
                 ),
               ],
             ),
-
-
-
-
-
             if (_currentDate.day == 26)
               OutlinedButton(
                 onPressed: () {
@@ -147,7 +161,45 @@ class _CalendarState extends State<Calendar> {
   }
 }
 
+class IconTextRectangle extends StatelessWidget {
+  const IconTextRectangle({super.key});
 
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(6.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(120),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4.0,
+            spreadRadius: 2.0,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: const [
+          Icon(
+            Icons.calendar_month,
+            color: Colors.blue,
+          ),
+          SizedBox(width: 120.0),
+
+          Text(
+            'Exibindo todas atividades',
+            style: TextStyle(
+                color: Colors.black,
+                fontSize: 16.0
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class Activity extends StatefulWidget {
   const Activity({super.key});
@@ -163,30 +215,31 @@ class _ActivityState extends State<Activity> {
   Widget build(BuildContext context) {
     return Container(
       color: Theme.of(context).colorScheme.inversePrimary,
-      child: Column(children: [
-        Text(
-          'Activity title',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-        const Text('A Física dos Buracos Negros Supermassivos'),
-        const Text('Mesa redonda'),
-        const Text('Domingo 07:00h - 08:00h'),
-        const Text('Sthepen William Hawking'),
-        const Text('Maputo'),
-        const Text('Astrofísica e Cosmologia'),
-        ElevatedButton.icon(
-          onPressed: () {
-            setState(() {
-              _favorited = !_favorited;
-            });
-          },
-          icon: _favorited
-              ? const Icon(Icons.star)
-              : const Icon(Icons.star_outline),
-          label: Text(
-              _favorited ? 'Remover da sua agenda' : 'Adicionar à sua agenda'),
-        )
-      ]),
+      child: Column(
+        children: [
+          Text(
+            'Activity title',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const Text('A Física dos Buracos Negros Supermassivos'),
+          const Text('Mesa redonda'),
+          const Text('Domingo 07:00h - 08:00h'),
+          const Text('Stephen William Hawking'),
+          const Text('Maputo'),
+          const Text('Astrofísica e Cosmologia'),
+          ElevatedButton.icon(
+            onPressed: () {
+              setState(() {
+                _favorited = !_favorited;
+              });
+            },
+            icon: _favorited ? const Icon(Icons.star) : const Icon(Icons.star_outline),
+            label: Text(
+              _favorited ? 'Remover da sua agenda' : 'Adicionar à sua agenda',
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
