@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:html/parser.dart' show parseFragment;
 
-
 void main() {
   runApp(const ChuvaDart());
 }
@@ -37,10 +36,25 @@ class _CalendarState extends State<Calendar> {
   DateTime _currentDate = DateTime(2023, 11, 26);
   bool _clicked = false;
 
-  Future<ActivityResponse> loadActivities() async {
-    final jsonString = await rootBundle.loadString('assets/activities.json');
-    final jsonResponse = json.decode(jsonString);
-    return ActivityResponse.fromJson(jsonResponse);
+  Future<List<Activity>> loadActivities() async {
+    final jsonString1 = await rootBundle.loadString('assets/activities.json');
+    final jsonString2 = await rootBundle.loadString('assets/activities-1.json');
+
+    final jsonResponse1 = json.decode(jsonString1);
+    final jsonResponse2 = json.decode(jsonString2);
+
+    final List<Activity> activities1 = (jsonResponse1['data'] as List)
+        .map((activityJson) => Activity.fromJson(activityJson))
+        .toList();
+
+    final List<Activity> activities2 = (jsonResponse2['data'] as List)
+        .map((activityJson) => Activity.fromJson(activityJson))
+        .toList();
+
+    // Combine both lists of activities
+    List<Activity> allActivities = [...activities1, ...activities2];
+
+    return allActivities;
   }
 
   void _changeDate(DateTime newDate) {
@@ -60,12 +74,12 @@ class _CalendarState extends State<Calendar> {
             Navigator.popUntil(context, ModalRoute.withName('/'));
           },
         ),
-        title: Row(
+        title: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Column(
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 Text(
                   'Chuva ❤️ Flutter',
                   style: TextStyle(
@@ -90,7 +104,7 @@ class _CalendarState extends State<Calendar> {
         centerTitle: true,
         toolbarHeight: 120,
       ),
-      body: FutureBuilder<ActivityResponse>(
+      body: FutureBuilder<List<Activity>>(
         future: loadActivities(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -98,84 +112,86 @@ class _CalendarState extends State<Calendar> {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else {
-            final activities = snapshot.data!.data;
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const Column(
-                        children: [
-                          Text('Nov', style: TextStyle(fontSize: 8.0)),
-                          Text('2023', style: TextStyle(fontSize: 10.0)),
-                        ],
-                      ),
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Container(
-                          color: Colors.lightBlueAccent,
-                          child: Row(
-                            children: List.generate(5, (index) {
-                              int day = 26 + index;
-                              bool isSelected = _currentDate.day == day;
-                              return Padding(
-                                padding: const EdgeInsets.only(left: 4.0),
-                                child: MouseRegion(
-                                  cursor: SystemMouseCursors.click,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      _changeDate(DateTime(2023, 11, day));
-                                    },
-                                    child: Container(
-                                      width: 30,
-                                      height: 30,
-                                      decoration: BoxDecoration(
-                                        color: Colors.lightBlueAccent,
-                                        borderRadius: BorderRadius.circular(5),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          '$day',
-                                          style: TextStyle(
-                                            color: isSelected
-                                                ? Colors.white
-                                                : const Color(0x8AFFFFFF),
+            final activities = snapshot.data!;
+            final filteredActivities = activities.where((activity) {
+              return _currentDate.day == activity.start.day;
+            }).toList();
+
+            return SingleChildScrollView(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        const Column(
+                          children: [
+                            Text('Nov', style: TextStyle(fontSize: 8.0)),
+                            Text('2023', style: TextStyle(fontSize: 10.0)),
+                          ],
+                        ),
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Container(
+                            color: Colors.lightBlueAccent,
+                            child: Row(
+                              children: List.generate(5, (index) {
+                                int day = 26 + index;
+                                bool isSelected = _currentDate.day == day;
+                                return Padding(
+                                  padding: const EdgeInsets.only(left: 4.0),
+                                  child: MouseRegion(
+                                    cursor: SystemMouseCursors.click,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        _changeDate(DateTime(2023, 11, day));
+                                      },
+                                      child: Container(
+                                        width: 30,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          color: Colors.lightBlueAccent,
+                                          borderRadius: BorderRadius.circular(5),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '$day',
+                                            style: TextStyle(
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : const Color(0x8AFFFFFF),
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              );
-                            }),
+                                );
+                              }),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  if (_currentDate.day == 26)
-                    OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          _clicked = true;
-                        });
-                      },
-                      child: const Text('Mesa redonda de 07:00 até 08:00'),
+                      ],
                     ),
-                  if (_currentDate.day == 28)
-                    OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          _clicked = true;
-                        });
-                      },
-                      child: const Text('Palestra de 09:30 até 10:00'),
-                    ),
-                  if (_currentDate.day == 26 && _clicked)
-                    ActivityWidget(activity: activities[0]),
-                ],
+                    // Exibe as atividades filtradas para o dia atual (_currentDate.day)
+                    ...filteredActivities.map((activity) {
+                      return OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.zero,
+                          ),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _clicked = true;
+                          });
+                        },
+                        child: ActivityWidget(activity: activity),
+                      );
+                    }),
+                  ],
+                ),
               ),
             );
           }
@@ -233,8 +249,6 @@ class Title {
   }
 }
 
-
-
 class Description {
   final String ptBr;
 
@@ -242,7 +256,8 @@ class Description {
 
   factory Description.fromJson(Map<String, dynamic> json) {
     // Processa e remove as tags HTML removendo Null
-    String cleanHtml = json['pt-br'] != null ? parseFragment(json['pt-br']!)?.text ?? '' : '';
+    String cleanHtml =
+    json['pt-br'] != null ? parseFragment(json['pt-br']!).text ?? '' : '';
 
     return Description(
       ptBr: cleanHtml,
@@ -309,8 +324,8 @@ class Person {
 
 class Activity {
   final int id;
-  final String start;
-  final String end;
+  final DateTime start;
+  final DateTime end;
   final Title title;
   final Description description;
   final Category category;
@@ -341,8 +356,8 @@ class Activity {
 
     return Activity(
       id: json['id'] ?? 0,
-      start: json['start'] ?? '',
-      end: json['end'] ?? '',
+      start: DateTime.parse(json['start'] ?? ''),
+      end: DateTime.parse(json['end'] ?? ''),
       title: Title.fromJson(json['title']),
       description: Description.fromJson(json['description']),
       category: Category.fromJson(json['category']),
@@ -368,8 +383,8 @@ class ActivityResponse {
     list.map((i) => Activity.fromJson(i)).toList();
 
     return ActivityResponse(
-      count: json['count'] ?? 0,
-      data: activitiesList,
+        count: json['count'] ?? 0,
+        data: activitiesList,
     );
   }
 }
@@ -394,35 +409,20 @@ class _ActivityWidgetState extends State<ActivityWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.activity.title.ptBr,
-            style: Theme.of(context).textTheme.bodySmall,
+            '${widget.activity.type} de ${widget.activity.start.hour}:${widget.activity.start.minute.toString().padLeft(2, '0')} até ${widget.activity.end.hour}:${widget.activity.end.minute.toString().padLeft(2, '0')}',
           ),
-          Text(widget.activity.description.ptBr),
-          Text(widget.activity.type),
           Text(
-              'Domingo ${widget.activity.start}h - ${widget.activity.end}h'),
-          Text(widget.activity.people.isNotEmpty
-              ? widget.activity.people[0].name
-              : 'No Speaker'),
-          Text(widget.activity.locations.isNotEmpty
-              ? widget.activity.locations[0].title.ptBr
-              : 'No Location'),
-          Text(widget.activity.category.title.ptBr),
-          ElevatedButton.icon(
-            onPressed: () {
-              setState(() {
-                _favorited = !_favorited;
-              });
-            },
-            icon: _favorited
-                ? const Icon(Icons.star)
-                : const Icon(Icons.star_outline),
-            label: Text(
-              _favorited ? 'Remover da sua agenda' : 'Adicionar à sua agenda',
-            ),
+            widget.activity.title.ptBr,
+            style: const TextStyle(fontSize: 14.0, fontStyle: FontStyle.italic, color: Colors.blue),
+          ),
+          Text(
+            widget.activity.people.isNotEmpty
+                ? widget.activity.people[0].name
+                : '',
           ),
         ],
       ),
     );
   }
 }
+
